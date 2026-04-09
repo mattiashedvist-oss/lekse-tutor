@@ -323,7 +323,11 @@
   <!-- Settings -->
   <div class="settings-drawer" id="settings-drawer">
     <label>Claude API-nøkkel</label>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…" oninput="saveKey()"/>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="api-key-input" placeholder="sk-ant-api03-…" style="flex:1;" oninput="saveKey()" onkeydown="if(event.key==='Enter'){saveKey();showSaved();}"/>
+      <button onclick="saveKey();showSaved();" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">Lagre</button>
+    </div>
+    <p class="settings-note" id="saved-confirm" style="color:#4ade80;display:none;">✓ Lagret!</p>
     <p class="settings-note">Hent nøkkel på <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
   </div>
 
@@ -464,6 +468,7 @@ const uploadZone = document.getElementById('upload-zone');
 const savedKey = localStorage.getItem('claude_api_key') || '';
 if (savedKey) document.getElementById('api-key-input').value = savedKey;
 function saveKey() { localStorage.setItem('claude_api_key', document.getElementById('api-key-input').value.trim()); }
+function showSaved() { const el = document.getElementById('saved-confirm'); el.style.display='block'; setTimeout(()=>el.style.display='none', 2000); }
 function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
 
 // ══ Enter app ══

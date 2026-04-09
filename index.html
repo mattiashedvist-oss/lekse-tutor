@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Lekse-tutor"/>
+  <meta name="theme-color" content="#6366f1"/>
+  <title>Lekse-tutor 📚</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icon-192.svg"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --mathea: #6366f1; --mathea2: #8b5cf6;
+      --silja:  #0891b2; --silja2:  #06b6d4;
+      --felicia:#d97706; --felicia2:#f59e0b;
+      --radius: 16px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; }
+
+    /* ── Screens ── */
+    .screen { position: fixed; inset: 0; display: none; flex-direction: column; overflow: hidden; }
+    .screen.active { display: flex; }
+
+    /* ════════════════ LANDING ════════════════ */
+    #landing {
+      background: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .landing-logo { font-size: 3rem; margin-bottom: 8px; }
+    .landing-title { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .landing-sub { font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 40px; }
+    .profiles { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
+    .profile-card {
+      border-radius: 18px; padding: 18px 22px;
+      display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+      border: none; text-align: left; color: #fff;
+    }
+    .profile-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .profile-card:active { transform: scale(0.98); }
+    .profile-card.mathea  { background: linear-gradient(135deg, var(--mathea), var(--mathea2)); }
+    .profile-card.silja   { background: linear-gradient(135deg, var(--silja),  var(--silja2)); }
+    .profile-card.felicia { background: linear-gradient(135deg, var(--felicia),var(--felicia2)); }
+    .profile-avatar { font-size: 2.4rem; width: 52px; text-align: center; }
+    .profile-info h3 { font-size: 1.1rem; font-weight: 700; }
+    .profile-info p  { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+    .profile-arrow { margin-left: auto; font-size: 1.2rem; opacity: 0.7; }
+
+    /* ════════════════ MAIN APP ════════════════ */
+    #app { background: #f1f5f9; }
+
+    /* Header */
+    .app-header {
+      padding: 12px 16px 12px;
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; flex-shrink: 0;
+    }
+    .app-header.mathea  { background: linear-gradient(135deg, var(--mathea),  var(--mathea2)); }
+    .app-header.silja   { background: linear-gradient(135deg, var(--silja),   var(--silja2)); }
+    .app-header.felicia { background: linear-gradient(135deg, var(--felicia), var(--felicia2)); }
+    .header-back { font-size: 1.3rem; cursor: pointer; padding: 4px; border: none; background: none; color: #fff; }
+    .header-avatar { font-size: 1.4rem; }
+    .header-name { font-weight: 700; font-size: 1rem; flex: 1; }
+    .header-settings { font-size: 1.2rem; cursor: pointer; padding: 4px; border: none; background: none; color: #fff; }
+
+    /* Settings drawer */
+    .settings-drawer {
+      background: #1e293b; color: #fff; padding: 16px;
+      display: none; flex-shrink: 0;
+    }
+    .settings-drawer.open { display: block; }
+    .settings-drawer label { font-size: 0.78rem; color: #94a3b8; display: block; margin-bottom: 4px; margin-top: 10px; }
+    .settings-drawer label:first-child { margin-top: 0; }
+    .settings-drawer input {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid #334155; background: #0f172a;
+      color: #e2e8f0; font-size: 0.85rem; font-family: monospace;
+    }
+    .settings-drawer input:focus { outline: none; border-color: #6366f1; }
+    .settings-note { font-size: 0.72rem; color: #64748b; margin-top: 4px; }
+    .settings-note a { color: #818cf8; }
+
+    /* Tab content area */
+    .tab-content { flex: 1; overflow-y: auto; padding-bottom: calc(64px + var(--safe-bottom)); }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-top: 1px solid #e2e8f0;
+      display: flex;
+      padding-bottom: var(--safe-bottom);
+      z-index: 100; flex-shrink: 0;
+    }
+    .nav-btn {
+      flex: 1; padding: 10px 4px 8px; border: none; background: none;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 0.65rem; color: #94a3b8; cursor: pointer; transition: color 0.15s;
+    }
+    .nav-btn .nav-icon { font-size: 1.3rem; }
+    .nav-btn.active { color: #6366f1; }
+    .nav-btn.active.silja   { color: var(--silja); }
+    .nav-btn.active.felicia { color: var(--felicia); }
+
+    /* ── Shared card ── */
+    .card { background: #fff; border-radius: var(--radius); padding: 16px; margin: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+    /* ════════════════ TUTOR TAB ════════════════ */
+    .subject-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 12px 12px 4px; scrollbar-width: none; }
+    .subject-scroll::-webkit-scrollbar { display: none; }
+    .subj-btn {
+      flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+      border: 2px solid #e2e8f0; background: #fff;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; color: #475569; white-space: nowrap;
+    }
+    .subj-btn:hover { border-color: #a5b4fc; }
+    .subj-btn.active.mathea  { border-color: var(--mathea);  background: var(--mathea);  color: #fff; }
+    .subj-btn.active.silja   { border-color: var(--silja);   background: var(--silja);   color: #fff; }
+    .subj-btn.active.felicia { border-color: var(--felicia); background: var(--felicia); color: #fff; }
+
+    .model-badge {
+      display: inline-block; font-size: 0.7rem; padding: 2px 8px;
+      border-radius: 10px; margin: 0 12px 8px; font-weight: 600;
+    }
+    .model-badge.opus   { background: #ede9fe; color: #6d28d9; }
+    .model-badge.sonnet { background: #dbeafe; color: #1d4ed8; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed #cbd5e1; border-radius: 12px;
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: all 0.2s; background: #f8fafc; position: relative;
+      margin-bottom: 10px;
+    }
+    .upload-zone:hover, .upload-zone.drag { border-color: #6366f1; background: #eef2ff; }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-icon { font-size: 2rem; margin-bottom: 6px; }
+    .upload-zone p { font-size: 0.85rem; color: #64748b; }
+    .upload-zone strong { color: #4f46e5; }
+
+    .upload-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+    .upload-action-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;
+      background: #fff; font-size: 0.82rem; cursor: pointer; text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      color: #475569; transition: all 0.15s;
+    }
+    .upload-action-btn:hover { border-color: #6366f1; color: #4f46e5; }
+    .upload-action-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    /* File previews */
+    .file-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .file-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: #f1f5f9; border-radius: 8px; padding: 6px 10px;
+      font-size: 0.8rem; color: #475569;
+    }
+    .file-pill .remove { cursor: pointer; color: #ef4444; font-size: 0.9rem; border: none; background: none; }
+    .file-pill img { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; }
+
+    textarea.question-input {
+      width: 100%; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 10px 12px; font-size: 0.9rem; font-family: inherit;
+      resize: vertical; min-height: 64px; color: #1e293b;
+      margin-bottom: 12px; background: #fff;
+    }
+    textarea.question-input:focus { outline: none; border-color: #6366f1; }
+
+    .ask-btn {
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      font-size: 1rem; font-weight: 700; cursor: pointer; color: #fff;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .ask-btn.mathea  { background: linear-gradient(135deg, var(--mathea),  var(--mathea2)); }
+    .ask-btn.silja   { background: linear-gradient(135deg, var(--silja),   var(--silja2)); }
+    .ask-btn.felicia { background: linear-gradient(135deg, var(--felicia), var(--felicia2)); }
+    .ask-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .ask-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Response */
+    .response-card {
+      background: #fff; border-radius: var(--radius); margin: 0 12px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: none;
+    }
+    .response-card.visible { display: block; }
+    .response-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }
+    .tutor-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .tutor-dot.mathea  { background: linear-gradient(135deg, var(--mathea),  var(--mathea2)); }
+    .tutor-dot.silja   { background: linear-gradient(135deg, var(--silja),   var(--silja2)); }
+    .tutor-dot.felicia { background: linear-gradient(135deg, var(--felicia), var(--felicia2)); }
+    .response-text { padding: 10px 16px 14px; font-size: 0.9rem; line-height: 1.75; color: #374151; white-space: pre-wrap; }
+    .rating-row { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+    .rating-row span { font-size: 0.8rem; color: #94a3b8; }
+    .rate-btn { padding: 5px 12px; border-radius: 16px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; cursor: pointer; }
+    .rate-btn.yes { background: #d1fae5; border-color: #10b981; }
+    .rate-btn.no  { background: #fee2e2; border-color: #ef4444; }
+    .saved-tag { font-size: 0.72rem; color: #10b981; margin-left: auto; }
+
+    /* Error */
+    .error-box { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; margin-top: 8px; display: none; }
+
+    /* Spinner */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════════════════ HISTORY TAB ════════════════ */
+    .filter-scroll { display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px 4px; scrollbar-width: none; }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+    .filter-chip { flex-shrink: 0; padding: 5px 12px; border-radius: 14px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.78rem; cursor: pointer; color: #475569; }
+    .filter-chip.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+    .history-item { background: #fff; border-radius: 12px; margin: 8px 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; transition: border-color 0.15s; }
+    .history-item.open { border-color: #6366f1; }
+    .hist-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .subj-tag { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #ede9fe; color: #6d28d9; }
+    .hist-date { font-size: 0.72rem; color: #94a3b8; }
+    .hist-q { font-size: 0.85rem; color: #374151; font-weight: 500; }
+    .hist-answer { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; font-size: 0.85rem; color: #374151; line-height: 1.7; white-space: pre-wrap; }
+    .history-item.open .hist-answer { display: block; }
+    .history-empty { text-align: center; color: #94a3b8; padding: 48px 20px; font-size: 0.9rem; }
+
+    /* ════════════════ CALENDAR TAB ════════════════ */
+    .add-event-btn {
+      width: calc(100% - 24px); margin: 12px; padding: 12px; border: 2px dashed #cbd5e1;
+      border-radius: 12px; background: #fff; font-size: 0.9rem; color: #64748b;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+    }
+    .add-event-btn:hover { border-color: #6366f1; color: #4f46e5; }
+
+    .event-form { background: #fff; border-radius: var(--radius); margin: 0 12px 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: none; }
+    .event-form.open { display: block; }
+    .form-row { margin-bottom: 12px; }
+    .form-row label { font-size: 0.78rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit; color: #1e293b; background: #f8fafc;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: #6366f1; background: #fff; }
+    .form-btns { display: flex; gap: 8px; }
+    .btn-save { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #6366f1; color: #fff; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    .btn-cancel { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 0.9rem; cursor: pointer; }
+
+    .event-card { background: #fff; border-radius: 12px; margin: 8px 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; }
+    .event-date-box { min-width: 44px; text-align: center; background: #f1f5f9; border-radius: 10px; padding: 6px 4px; }
+    .event-day { font-size: 1.3rem; font-weight: 800; color: #1e293b; line-height: 1; }
+    .event-mon { font-size: 0.65rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+    .event-info { flex: 1; }
+    .event-title { font-weight: 600; font-size: 0.9rem; color: #1e293b; }
+    .event-subj { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+    .event-type-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .event-type-badge.exam     { background: #fef3c7; color: #92400e; }
+    .event-type-badge.deadline { background: #fee2e2; color: #991b1b; }
+    .event-type-badge.reminder { background: #dbeafe; color: #1e40af; }
+    .event-delete { border: none; background: none; color: #cbd5e1; font-size: 1rem; cursor: pointer; padding: 4px; }
+    .event-delete:hover { color: #ef4444; }
+    .section-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 16px 4px; }
+
+    /* ════════════════ FILES TAB ════════════════ */
+    .file-upload-btn {
+      width: calc(100% - 24px); margin: 12px; padding: 16px;
+      border: 2px dashed #cbd5e1; border-radius: 12px; background: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-size: 0.9rem; color: #64748b; cursor: pointer; text-align: center;
+      transition: all 0.15s; position: relative;
+    }
+    .file-upload-btn:hover { border-color: #6366f1; color: #4f46e5; }
+    .file-upload-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    .file-card { background: #fff; border-radius: 12px; margin: 8px 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; }
+    .file-icon { font-size: 1.8rem; width: 40px; text-align: center; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-weight: 600; font-size: 0.88rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
+    .file-ask-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 0.75rem; color: #6366f1; cursor: pointer; flex-shrink: 0; }
+    .file-delete-btn { border: none; background: none; color: #cbd5e1; font-size: 1rem; cursor: pointer; }
+    .file-delete-btn:hover { color: #ef4444; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LANDING ══ -->
+<div class="screen active" id="landing">
+  <div class="landing-logo">📚</div>
+  <div class="landing-title">Lekse-tutor</div>
+  <div class="landing-sub">Hvem er du i dag?</div>
+  <div class="profiles">
+    <button class="profile-card mathea" onclick="enterApp('Mathea','🎓','VGS · 18 år','mathea')">
+      <span class="profile-avatar">🎓</span>
+      <span class="profile-info"><h3>Mathea</h3><p>Videregående · 18 år</p></span>
+      <span class="profile-arrow">›</span>
+    </button>
+    <button class="profile-card silja" onclick="enterApp('Silja','📘','Ungdomsskole · 13 år','silja')">
+      <span class="profile-avatar">📘</span>
+      <span class="profile-info"><h3>Silja</h3><p>Ungdomsskole · 13 år</p></span>
+      <span class="profile-arrow">›</span>
+    </button>
+    <button class="profile-card felicia" onclick="enterApp('Felicia','⭐','Barneskole · 8 år','felicia')">
+      <span class="profile-avatar">⭐</span>
+      <span class="profile-info"><h3>Felicia</h3><p>Barneskole · 8 år</p></span>
+      <span class="profile-arrow">›</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="screen" id="app">
+
+  <!-- Header -->
+  <div class="app-header" id="app-header">
+    <button class="header-back" onclick="goBack()">‹</button>
+    <span class="header-avatar" id="header-avatar"></span>
+    <span class="header-name" id="header-name"></span>
+    <button class="header-settings" onclick="toggleSettings()">⚙️</button>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-drawer" id="settings-drawer">
+    <label>Claude API-nøkkel</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…" oninput="saveKey()"/>
+    <p class="settings-note">Hent nøkkel på <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+
+  <!-- Tab panels -->
+  <div class="tab-content" id="tab-tutor">
+
+    <!-- Subject strip -->
+    <div class="subject-scroll" id="subject-scroll"></div>
+    <div id="model-badge-area"></div>
+
+    <div class="card">
+      <!-- Upload actions -->
+      <div class="upload-actions">
+        <label class="upload-action-btn" style="position:relative">
+          📷 Kamera
+          <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="addFiles(this.files)"/>
+        </label>
+        <label class="upload-action-btn" style="position:relative">
+          🖼️ Bilde / PDF
+          <input type="file" id="file-input" accept="image/*,.pdf,.docx,.doc" multiple onchange="addFiles(this.files)"/>
+        </label>
+      </div>
+
+      <!-- Drag-drop zone -->
+      <div class="upload-zone" id="upload-zone"
+           ondragover="e=>e.preventDefault()" ondragenter="uploadZone.classList.add('drag')"
+           ondragleave="uploadZone.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <input type="file" accept="image/*,.pdf,.docx,.doc" multiple onchange="addFiles(this.files)"/>
+        <div class="upload-icon">📎</div>
+        <p><strong>Dra og slipp</strong> eller klikk for å velge<br><span style="font-size:0.75rem;color:#94a3b8">Bilder, PDF, Word-dokumenter</span></p>
+      </div>
+
+      <!-- File previews -->
+      <div class="file-previews" id="file-previews"></div>
+
+      <textarea class="question-input" id="question-input" placeholder="Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…"></textarea>
+
+      <button class="ask-btn" id="ask-btn" onclick="askTutor()">Spør tutoren! 🚀</button>
+      <div class="error-box" id="error-box"></div>
+    </div>
+
+    <!-- Response -->
+    <div class="response-card" id="response-card">
+      <div class="response-header">
+        <div class="tutor-dot" id="tutor-dot">🤖</div>
+        <strong style="font-size:0.9rem">Tutoren svarer</strong>
+      </div>
+      <div class="response-text" id="response-text"></div>
+      <div class="rating-row">
+        <span>Nyttig?</span>
+        <button class="rate-btn" id="rate-yes" onclick="rate(true)">👍</button>
+        <button class="rate-btn" id="rate-no"  onclick="rate(false)">👎</button>
+        <span class="saved-tag" id="saved-tag" style="display:none">✅ Lagret</span>
+      </div>
+    </div>
+
+  </div><!-- /tab-tutor -->
+
+  <div class="tab-content" id="tab-history" style="display:none">
+    <div class="filter-scroll" id="history-filter-row"></div>
+    <div id="history-list"></div>
+  </div>
+
+  <div class="tab-content" id="tab-calendar" style="display:none">
+    <button class="add-event-btn" onclick="toggleEventForm()">＋ Legg til prøve / frist / påminnelse</button>
+    <div class="event-form" id="event-form">
+      <div class="form-row"><label>Tittel</label><input id="ev-title" placeholder="f.eks. Matematikkprøve" /></div>
+      <div class="form-row"><label>Dato</label><input type="date" id="ev-date" /></div>
+      <div class="form-row"><label>Fag</label><input id="ev-subject" placeholder="Matematikk" /></div>
+      <div class="form-row"><label>Type</label>
+        <select id="ev-type">
+          <option value="exam">📝 Prøve / eksamen</option>
+          <option value="deadline">⏰ Innleveringsfrist</option>
+          <option value="reminder">🔔 Påminnelse</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Notater (valgfritt)</label><textarea id="ev-notes" rows="2" placeholder="Pensum, kapitler…"></textarea></div>
+      <div class="form-btns">
+        <button class="btn-cancel" onclick="toggleEventForm()">Avbryt</button>
+        <button class="btn-save" onclick="saveEvent()">Lagre</button>
+      </div>
+    </div>
+    <div id="events-list"></div>
+  </div>
+
+  <div class="tab-content" id="tab-files" style="display:none">
+    <label class="file-upload-btn">
+      📁 Last opp skolearbeid
+      <input type="file" accept="image/*,.pdf,.docx,.doc" multiple onchange="uploadSchoolFile(this.files)"/>
+    </label>
+    <div id="files-list"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" id="nav-tutor"    onclick="switchTab('tutor')">   <span class="nav-icon">✏️</span>Tutor</button>
+    <button class="nav-btn"        id="nav-history"  onclick="switchTab('history')"> <span class="nav-icon">🕐</span>Historikk</button>
+    <button class="nav-btn"        id="nav-calendar" onclick="switchTab('calendar')"><span class="nav-icon">📅</span>Kalender</button>
+    <button class="nav-btn"        id="nav-files"    onclick="switchTab('files')">   <span class="nav-icon">📁</span>Filer</button>
+  </nav>
+
+</div><!-- /app -->
+
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script>
+// ══ Supabase ══
+const SUPABASE_URL = 'https://pqxcgcjdabhxebyredsz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ZZku3gIsMGOMstIbafTRuQ_TI6aYT3q';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══ Model routing ══
+const HARD_SUBJECTS = ['Matematikk','Fysikk','Kjemi','Biologi','Naturfag'];
+const MODELS = { opus: 'claude-opus-4-6', sonnet: 'claude-sonnet-4-6' };
+function modelForSubject(subj) {
+  return HARD_SUBJECTS.some(s => subj.includes(s)) ? MODELS.opus : MODELS.sonnet;
+}
+
+// ══ Subjects per student ══
+const SUBJECTS = {
+  mathea:  ['🔢 Matematikk','⚗️ Fysikk','🧪 Kjemi','🧬 Biologi','📖 Norsk','🇬🇧 Engelsk','🌍 Historie'],
+  silja:   ['🔢 Matematikk','🔬 Naturfag','📖 Norsk','🇬🇧 Engelsk','🌍 Samfunnsfag'],
+  felicia: ['🔢 Matematikk','📖 Norsk','🇬🇧 Engelsk']
+};
+
+// ══ System prompts ══
+const PROMPTS = {
+  mathea:  (subj) => `Du er en vennlig og dyktig privatlærer for Mathea, en 18-åring på VGS. Fag: ${subj}. Svar ALLTID på norsk. Forklar steg for steg, vis alle utregninger, bruk faglige termer men forklar dem. Avslutt med oppmuntring.`,
+  silja:   (subj) => `Du er en tålmodig privatlærer for Silja, 13 år på ungdomsskolen. Fag: ${subj}. Svar ALLTID på norsk. Bruk enkelt, klart språk. Gi relaterbare eksempler. Forklar ett steg om gangen. Vær oppmuntrende og vennlig.`,
+  felicia: (subj) => `Du er en morsom og snill lærer for Felicia, 8 år på barneskolen. Fag: ${subj}. Svar ALLTID på norsk. Bruk veldig enkle ord. Vær entusiastisk og positiv. Bruk gjerne morsomme eksempler. Hold forklaringen kort og enkel.`
+};
+
+// ══ State ══
+let student = null, theme = null, selectedSubject = '', attachments = [], currentConvId = null;
+const uploadZone = document.getElementById('upload-zone');
+
+// ══ Saved API key ══
+const savedKey = localStorage.getItem('claude_api_key') || '';
+if (savedKey) document.getElementById('api-key-input').value = savedKey;
+function saveKey() { localStorage.setItem('claude_api_key', document.getElementById('api-key-input').value.trim()); }
+function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
+
+// ══ Enter app ══
+function enterApp(name, avatar, desc, th) {
+  student = name; theme = th;
+  document.getElementById('landing').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  document.getElementById('app-header').className = `app-header ${th}`;
+  document.getElementById('header-avatar').textContent = avatar;
+  document.getElementById('header-name').textContent = name;
+  document.getElementById('tutor-dot').className = `tutor-dot ${th}`;
+  document.getElementById('ask-btn').className = `ask-btn ${th}`;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active','mathea','silja','felicia'));
+
+  buildSubjects();
+  switchTab('tutor');
+  localStorage.setItem('last_student', JSON.stringify({name, avatar, desc, th}));
+}
+
+function goBack() {
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('landing').classList.add('active');
+}
+
+// ══ Subjects ══
+function buildSubjects() {
+  const strip = document.getElementById('subject-scroll');
+  strip.innerHTML = '';
+  SUBJECTS[theme].forEach((s, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'subj-btn' + (i === 0 ? ` active ${theme}` : '');
+    btn.textContent = s;
+    btn.onclick = () => selectSubject(s.replace(/^[^\s]+ /,''), btn);
+    strip.appendChild(btn);
+  });
+  selectSubject(SUBJECTS[theme][0].replace(/^[^\s]+ /,''), strip.firstChild);
+}
+
+function selectSubject(name, btn) {
+  selectedSubject = name;
+  document.querySelectorAll('.subj-btn').forEach(b => b.className = 'subj-btn');
+  btn.className = `subj-btn active ${theme}`;
+  const model = modelForSubject(name);
+  const badge = document.getElementById('model-badge-area');
+  badge.innerHTML = `<span class="model-badge ${model === MODELS.opus ? 'opus':'sonnet'}">${model === MODELS.opus ? '🔬 Claude Opus – høy nøyaktighet':'✍️ Claude Sonnet'}</span>`;
+}
+
+// ══ Tabs ══
+function switchTab(tab) {
+  ['tutor','history','calendar','files'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+    const btn = document.getElementById(`nav-${t}`);
+    btn.className = 'nav-btn' + (t === tab ? ` active ${theme}` : '');
+  });
+  if (tab === 'history')  loadHistory();
+  if (tab === 'calendar') loadEvents();
+  if (tab === 'files')    loadFiles();
+}
+
+// ══ File handling ══
+function addFiles(fileList) {
+  Array.from(fileList).forEach(f => processFile(f));
+}
+function handleDrop(e) {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  addFiles(e.dataTransfer.files);
+}
+
+async function processFile(file) {
+  const type = file.type;
+  if (type.startsWith('image/')) {
+    const b64 = await toBase64(file);
+    attachments.push({ kind: 'image', mime: type, data: b64.split(',')[1], name: file.name, preview: b64 });
+  } else if (type === 'application/pdf') {
+    const b64 = await toBase64(file);
+    attachments.push({ kind: 'pdf', mime: type, data: b64.split(',')[1], name: file.name });
+  } else if (type.includes('word') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+    const arrayBuf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuf });
+    attachments.push({ kind: 'text', text: result.value, name: file.name });
+  }
+  renderPreviews();
+}
+
+function renderPreviews() {
+  const c = document.getElementById('file-previews');
+  c.innerHTML = '';
+  attachments.forEach((a, i) => {
+    const pill = document.createElement('div'); pill.className = 'file-pill';
+    const icon = a.kind === 'image' ? `<img src="data:${a.mime};base64,${a.data}"/>` : (a.kind === 'pdf' ? '📄' : '📝');
+    pill.innerHTML = `${icon}<span>${a.name}</span><button class="remove" onclick="removeAttachment(${i})">✕</button>`;
+    c.appendChild(pill);
+  });
+  document.getElementById('upload-zone').style.display = attachments.length ? 'none' : '';
+}
+
+function removeAttachment(i) { attachments.splice(i, 1); renderPreviews(); }
+
+function toBase64(file) {
+  return new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file); });
+}
+
+// ══ Ask tutor ══
+async function askTutor() {
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  const question = document.getElementById('question-input').value.trim();
+  const btn = document.getElementById('ask-btn');
+  const errBox = document.getElementById('error-box');
+  const responseCard = document.getElementById('response-card');
+
+  errBox.style.display = 'none';
+  responseCard.classList.remove('visible');
+  document.getElementById('saved-tag').style.display = 'none';
+  currentConvId = null;
+
+  if (!apiKey) { showError('Legg inn API-nøkkelen i ⚙️-innstillingene øverst.'); return; }
+  if (!attachments.length && !question) { showError('Last opp en fil eller skriv et spørsmål.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Tutoren tenker…';
+
+  const userContent = [];
+  attachments.forEach(a => {
+    if (a.kind === 'image') userContent.push({ type:'image', source:{ type:'base64', media_type: a.mime, data: a.data }});
+    else if (a.kind === 'pdf') userContent.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data: a.data }});
+    else if (a.kind === 'text') userContent.push({ type:'text', text:`[${a.name}]\n${a.text}` });
+  });
+  userContent.push({ type:'text', text: question || 'Vennligst forklar og løs oppgaven steg for steg.' });
+
+  const model = modelForSubject(selectedSubject);
+  const systemPrompt = PROMPTS[theme](selectedSubject);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version':'2023-06-01', 'content-type':'application/json', 'anthropic-dangerous-request-source':'browser' },
+      body: JSON.stringify({ model, max_tokens: 2048, system: systemPrompt, messages:[{ role:'user', content: userContent }] })
+    });
+
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+    const data = await res.json();
+    const answer = data.content?.[0]?.text || '(Ingen svar)';
+
+    document.getElementById('response-text').textContent = answer;
+    responseCard.classList.add('visible');
+    document.getElementById('rate-yes').className = 'rate-btn';
+    document.getElementById('rate-no').className  = 'rate-btn';
+    responseCard.scrollIntoView({ behavior:'smooth', block:'start' });
+
+    const { data: saved, error } = await db.from('conversations').insert({
+      student_name: student, subject: selectedSubject,
+      user_question: question || null, tutor_response: answer
+    }).select('id').single();
+    if (!error && saved) { currentConvId = saved.id; document.getElementById('saved-tag').style.display = ''; }
+
+  } catch(err) {
+    let msg = err.message || 'Ukjent feil';
+    if (msg.includes('401') || msg.toLowerCase().includes('auth')) msg = 'API-nøkkelen er ikke gyldig.';
+    showError(msg);
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Spør tutoren! 🚀';
+  }
+}
+
+async function rate(helpful) {
+  document.getElementById('rate-yes').className = 'rate-btn' + (helpful ? ' yes' : '');
+  document.getElementById('rate-no').className  = 'rate-btn' + (!helpful ? ' no' : '');
+  if (currentConvId) await db.from('conversations').update({ helpful }).eq('id', currentConvId);
+}
+
+function showError(msg) {
+  const b = document.getElementById('error-box'); b.textContent = '⚠️ '+msg; b.style.display = 'block';
+}
+
+// ══ History ══
+let histFilter = 'Alle', histOffset = 0;
+
+async function loadHistory(append=false) {
+  if (!append) { histOffset = 0; document.getElementById('history-list').innerHTML = '<p class="history-empty">Laster…</p>'; }
+  let q = db.from('conversations').select('*').eq('student_name', student).order('created_at',{ascending:false}).range(histOffset, histOffset+14);
+  if (histFilter !== 'Alle') q = q.eq('subject', histFilter);
+  const { data } = await q;
+  if (!append) document.getElementById('history-list').innerHTML = '';
+  if (!data?.length && !append) { document.getElementById('history-list').innerHTML = '<p class="history-empty">📭 Ingen samtaler ennå.</p>'; return; }
+
+  // Build filter chips
+  if (!append) {
+    const row = document.getElementById('history-filter-row');
+    row.innerHTML = '';
+    ['Alle',...(SUBJECTS[theme]||[]).map(s=>s.replace(/^[^\s]+ /,''))].forEach(f => {
+      const c = document.createElement('button'); c.className='filter-chip'+(f===histFilter?' active':'');
+      c.textContent=f; c.onclick=()=>{ histFilter=f; loadHistory(); }; row.appendChild(c);
+    });
+  }
+
+  (data||[]).forEach(item => {
+    const d = new Date(item.created_at);
+    const date = d.toLocaleDateString('nb-NO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const preview = item.user_question ? item.user_question.slice(0,70)+(item.user_question.length>70?'…':'') : '(Oppgave fra fil)';
+    const el = document.createElement('div'); el.className='history-item';
+    el.innerHTML = `<div class="hist-meta"><span class="subj-tag">${item.subject}</span><span class="hist-date">${date}</span>${item.helpful===true?'👍':item.helpful===false?'👎':''}</div><div class="hist-q">${preview}</div><div class="hist-answer">${item.tutor_response}</div>`;
+    el.onclick=()=>el.classList.toggle('open');
+    document.getElementById('history-list').appendChild(el);
+  });
+  histOffset += (data||[]).length;
+}
+
+// ══ Calendar / Events ══
+let eventFormOpen = false;
+function toggleEventForm() {
+  eventFormOpen = !eventFormOpen;
+  document.getElementById('event-form').className = 'event-form' + (eventFormOpen?' open':'');
+  if (eventFormOpen) document.getElementById('ev-date').valueAsDate = new Date();
+}
+
+async function saveEvent() {
+  const title   = document.getElementById('ev-title').value.trim();
+  const date    = document.getElementById('ev-date').value;
+  const subject = document.getElementById('ev-subject').value.trim();
+  const type    = document.getElementById('ev-type').value;
+  const notes   = document.getElementById('ev-notes').value.trim();
+  if (!title || !date) { alert('Tittel og dato er påkrevd.'); return; }
+  await db.from('events').insert({ student_name:student, title, event_date:date, subject:subject||null, event_type:type, notes:notes||null });
+  toggleEventForm();
+  ['ev-title','ev-subject','ev-notes'].forEach(id=>document.getElementById(id).value='');
+  loadEvents();
+}
+
+async function loadEvents() {
+  const { data } = await db.from('events').select('*').eq('student_name',student).order('event_date',{ascending:true});
+  const list = document.getElementById('events-list');
+  list.innerHTML = '';
+  if (!data?.length) { list.innerHTML='<p class="history-empty">📅 Ingen kommende hendelser.<br>Legg til prøver og frister!</p>'; return; }
+
+  const now = new Date(); now.setHours(0,0,0,0);
+  const upcoming = data.filter(e => new Date(e.event_date) >= now);
+  const past     = data.filter(e => new Date(e.event_date) <  now);
+
+  if (upcoming.length) { const l=document.createElement('p'); l.className='section-label'; l.textContent='Kommende'; list.appendChild(l); }
+  upcoming.forEach(e => list.appendChild(buildEventCard(e)));
+  if (past.length)     { const l=document.createElement('p'); l.className='section-label'; l.textContent='Tidligere'; list.appendChild(l); }
+  past.forEach(e => list.appendChild(buildEventCard(e)));
+}
+
+function buildEventCard(e) {
+  const d = new Date(e.event_date+'T12:00:00');
+  const day = d.getDate();
+  const mon = d.toLocaleDateString('nb-NO',{month:'short'});
+  const typeLabel = {exam:'Prøve',deadline:'Innlevering',reminder:'Påminnelse'}[e.event_type]||e.event_type;
+  const card = document.createElement('div'); card.className='event-card';
+  card.innerHTML = `<div class="event-date-box"><div class="event-day">${day}</div><div class="event-mon">${mon}</div></div><div class="event-info"><div class="event-title">${e.title}</div><div class="event-subj">${e.subject||''}${e.notes?` · ${e.notes}`:''}</div></div><span class="event-type-badge ${e.event_type}">${typeLabel}</span><button class="event-delete" onclick="deleteEvent('${e.id}')">🗑</button>`;
+  return card;
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Slette denne hendelsen?')) return;
+  await db.from('events').delete().eq('id',id);
+  loadEvents();
+}
+
+// ══ School Files ══
+async function uploadSchoolFile(fileList) {
+  for (const file of Array.from(fileList)) {
+    let content_text = null, file_type = 'other';
+    if (file.type.startsWith('image/'))  file_type = 'image';
+    else if (file.type === 'application/pdf') file_type = 'pdf';
+    else if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) {
+      file_type = 'docx';
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      content_text = result.value.slice(0, 5000);
+    }
+    await db.from('school_files').insert({ student_name:student, file_name:file.name, file_type, content_text });
+  }
+  loadFiles();
+}
+
+async function loadFiles() {
+  const { data } = await db.from('school_files').select('*').eq('student_name',student).order('created_at',{ascending:false});
+  const list = document.getElementById('files-list');
+  list.innerHTML = '';
+  if (!data?.length) { list.innerHTML='<p class="history-empty">📁 Ingen filer ennå.<br>Last opp skolearbeid for å organisere det!</p>'; return; }
+  data.forEach(f => {
+    const icon = {image:'🖼️',pdf:'📄',docx:'📝'}[f.file_type]||'📎';
+    const d = new Date(f.created_at).toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
+    const card = document.createElement('div'); card.className='file-card';
+    card.innerHTML = `<span class="file-icon">${icon}</span><div class="file-info"><div class="file-name">${f.file_name}</div><div class="file-meta">${d}${f.subject?' · '+f.subject:''}</div></div>${f.content_text?`<button class="file-ask-btn" onclick="askAboutFile('${f.id}')">Spør tutoren</button>`:''}  <button class="file-delete-btn" onclick="deleteFile('${f.id}')">🗑</button>`;
+    list.appendChild(card);
+  });
+}
+
+async function askAboutFile(id) {
+  const { data } = await db.from('school_files').select('*').eq('id',id).single();
+  if (!data) return;
+  switchTab('tutor');
+  document.getElementById('question-input').value = `Her er teksten fra filen «${data.file_name}»:\n\n${data.content_text}\n\nKan du hjelpe meg å forstå innholdet?`;
+}
+
+async function deleteFile(id) {
+  if (!confirm('Slette denne filen?')) return;
+  await db.from('school_files').delete().eq('id',id);
+  loadFiles();
+}
+
+// ══ Auto-login last student ══
+const last = JSON.parse(localStorage.getItem('last_student')||'null');
+if (last) enterApp(last.name, last.avatar, last.desc, last.th);
+
+// ══ Service Worker ══
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script>
+</body>
+</html>

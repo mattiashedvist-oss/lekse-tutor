@@ -591,11 +591,12 @@ const uploadZone = document.getElementById('upload-zone');
 
 function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
 
-// ══ Profile photos ══
+// ══ Profile photos (stored in Supabase, shared across devices) ══
 async function savePhoto(name, input) {
   const file = input.files[0]; if (!file) return;
   const b64 = await resizeImage(file, 200, 0.9);
-  localStorage.setItem(`photo_${name}`, b64);
+  // Upsert to Supabase (insert or update if student_name already exists)
+  await db.from('profile_photos').upsert({ student_name: name, photo_b64: b64, updated_at: new Date().toISOString() }, { onConflict: 'student_name' });
   updateProfilePhoto(name, b64);
 }
 function updateProfilePhoto(name, b64) {
@@ -608,10 +609,9 @@ function updateProfilePhoto(name, b64) {
     if (link) link.childNodes[0].textContent = '📷 Endre bilde';
   }
 }
-function loadAllPhotos() {
-  ['Mathea','Silja','Felicia'].forEach(name => {
-    const p = localStorage.getItem(`photo_${name}`); if (p) updateProfilePhoto(name, p);
-  });
+async function loadAllPhotos() {
+  const { data } = await db.from('profile_photos').select('*');
+  if (data) data.forEach(row => updateProfilePhoto(row.student_name, row.photo_b64));
 }
 
 // ══ Enter app ══
@@ -629,12 +629,12 @@ function enterApp(name, avatar, desc, th) {
 
   // Show profile photo or emoji in header
   const headerAvatar = document.getElementById('header-avatar');
-  const photo = localStorage.getItem(`photo_${name}`);
-  if (photo) {
-    headerAvatar.innerHTML = `<img src="${photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6)"/>`;
-  } else {
-    headerAvatar.textContent = avatar;
-  }
+  headerAvatar.textContent = avatar;
+  db.from('profile_photos').select('photo_b64').eq('student_name', name).single().then(({ data }) => {
+    if (data?.photo_b64) {
+      headerAvatar.innerHTML = `<img src="${data.photo_b64}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6)"/>`;
+    }
+  });
 
   buildSubjects();
   switchTab('tutor');

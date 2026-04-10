@@ -24,11 +24,11 @@
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; overflow: hidden; }
+    html, body { height: 100%; overflow: hidden; overflow-x: hidden; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; }
 
     /* ── Screens ── */
-    .screen { position: fixed; inset: 0; display: none; flex-direction: column; overflow: hidden; }
+    .screen { position: fixed; inset: 0; display: none; flex-direction: column; overflow: hidden; overflow-x: hidden; max-width: 100vw; }
     .screen.active { display: flex; }
 
     /* ════════════════ LANDING ════════════════ */
@@ -41,7 +41,7 @@
     .landing-sub { font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 40px; }
     .profiles { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
     .profile-card {
-      border-radius: 18px; padding: 18px 22px;
+      width: 100%; border-radius: 18px; padding: 18px 22px;
       display: flex; align-items: center; gap: 16px;
       cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
       border: none; text-align: left; color: #fff;
@@ -226,6 +226,15 @@
     .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
     .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
 
+    /* Thinking indicator */
+    .chat-thinking { background: #fff; border-radius: 14px; padding: 16px 18px; margin: 4px 0 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: center; }
+    .thinking-dots { display: flex; gap: 5px; }
+    .thinking-dots span { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; animation: think-bounce 1.4s ease-in-out infinite; }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes think-bounce { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+    .thinking-label { font-size: 0.82rem; color: #94a3b8; }
+
     /* Quick actions row */
     .quick-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; display: none; }
     .quick-actions.visible { display: flex; }
@@ -240,12 +249,12 @@
     @keyframes pulse-mic { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }
 
     /* Flashcard overlay */
-    .fc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .fc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; max-width: 100vw; }
     .fc-overlay.open { display: flex; }
     .fc-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 380px; padding: 0 4px 12px; }
     .fc-header span { color: #fff; font-weight: 700; font-size: 1rem; }
     .fc-close { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 1.5rem; cursor: pointer; }
-    .fc-deck { width: 100%; max-width: 380px; height: 240px; perspective: 800px; margin-bottom: 16px; }
+    .fc-deck { width: 100%; max-width: min(380px, calc(100vw - 40px)); height: 240px; perspective: 800px; margin-bottom: 16px; }
     .fc-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s; cursor: pointer; }
     .fc-card.flipped { transform: rotateY(180deg); }
     .fc-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 1rem; line-height: 1.6; overflow-y: auto; }
@@ -813,6 +822,14 @@ async function askTutor() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Tutoren tenker…';
 
+  // Show thinking indicator in conversation thread
+  const thread = document.getElementById('conversation-thread');
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'chat-thinking'; thinkEl.id = 'thinking-indicator';
+  thinkEl.innerHTML = `<span style="font-size:1.2rem">🤖</span><div class="thinking-dots"><span></span><span></span><span></span></div><span class="thinking-label">Tutoren tenker…</span>`;
+  thread.appendChild(thinkEl);
+  thinkEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
   const userContent = [];
   attachments.forEach(a => {
     if (a.kind === 'image') userContent.push({ type:'image', source:{ type:'base64', media_type: a.mime, data: a.data }});
@@ -854,6 +871,7 @@ async function askTutor() {
     let msg = err.message || 'Ukjent feil';
     showError(msg);
   } finally {
+    const ti = document.getElementById('thinking-indicator'); if (ti) ti.remove();
     btn.disabled = false; btn.innerHTML = 'Spør tutoren! 🚀';
   }
 }

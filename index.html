@@ -55,6 +55,12 @@
     .profile-info h3 { font-size: 1.1rem; font-weight: 700; }
     .profile-info p  { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
     .profile-arrow { margin-left: auto; font-size: 1.2rem; opacity: 0.7; }
+    .profile-avatar-wrap { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+    .profile-avatar-wrap .profile-avatar { font-size: 2.4rem; width: 52px; text-align: center; display: block; line-height: 52px; }
+    .profile-photo { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.6); display: none; }
+    .photo-edit-btn { position: absolute; bottom: -4px; right: -4px; background: rgba(0,0,0,0.5); color: #fff; border-radius: 50%; width: 20px; height: 20px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .conv-delete-btn { border: none; background: none; color: rgba(255,255,255,0.4); font-size: 0.85rem; cursor: pointer; margin-left: auto; padding: 2px 4px; }
+    .conv-delete-btn:hover { color: #ef4444; }
 
     /* ════════════════ MAIN APP ════════════════ */
     #app { background: #f1f5f9; }
@@ -313,17 +319,26 @@
   <div class="landing-sub">Hvem er du i dag?</div>
   <div class="profiles">
     <button class="profile-card mathea" onclick="enterApp('Mathea','🎓','VGS · 18 år','mathea')">
-      <span class="profile-avatar">🎓</span>
+      <div class="profile-avatar-wrap">
+        <img class="profile-photo" id="photo-Mathea"/><span class="profile-avatar" id="emoji-Mathea">🎓</span>
+        <label class="photo-edit-btn" onclick="event.stopPropagation()" title="Endre bilde">📷<input type="file" accept="image/*" style="display:none" onchange="savePhoto('Mathea',this)"/></label>
+      </div>
       <span class="profile-info"><h3>Mathea</h3><p>Videregående · 18 år</p></span>
       <span class="profile-arrow">›</span>
     </button>
     <button class="profile-card silja" onclick="enterApp('Silja','📘','Ungdomsskole · 13 år','silja')">
-      <span class="profile-avatar">📘</span>
+      <div class="profile-avatar-wrap">
+        <img class="profile-photo" id="photo-Silja"/><span class="profile-avatar" id="emoji-Silja">📘</span>
+        <label class="photo-edit-btn" onclick="event.stopPropagation()" title="Endre bilde">📷<input type="file" accept="image/*" style="display:none" onchange="savePhoto('Silja',this)"/></label>
+      </div>
       <span class="profile-info"><h3>Silja</h3><p>Ungdomsskole · 13 år</p></span>
       <span class="profile-arrow">›</span>
     </button>
     <button class="profile-card felicia" onclick="enterApp('Felicia','⭐','Barneskole · 8 år','felicia')">
-      <span class="profile-avatar">⭐</span>
+      <div class="profile-avatar-wrap">
+        <img class="profile-photo" id="photo-Felicia"/><span class="profile-avatar" id="emoji-Felicia">⭐</span>
+        <label class="photo-edit-btn" onclick="event.stopPropagation()" title="Endre bilde">📷<input type="file" accept="image/*" style="display:none" onchange="savePhoto('Felicia',this)"/></label>
+      </div>
       <span class="profile-info"><h3>Felicia</h3><p>Barneskole · 8 år</p></span>
       <span class="profile-arrow">›</span>
     </button>
@@ -470,21 +485,48 @@ const uploadZone = document.getElementById('upload-zone');
 
 function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
 
+// ══ Profile photos ══
+async function savePhoto(name, input) {
+  const file = input.files[0]; if (!file) return;
+  const b64 = await resizeImage(file, 200, 0.9);
+  localStorage.setItem(`photo_${name}`, b64);
+  updateProfilePhoto(name, b64);
+}
+function updateProfilePhoto(name, b64) {
+  const img = document.getElementById(`photo-${name}`);
+  const emoji = document.getElementById(`emoji-${name}`);
+  if (img && b64) { img.src = b64; img.style.display = 'block'; if (emoji) emoji.style.display = 'none'; }
+}
+function loadAllPhotos() {
+  ['Mathea','Silja','Felicia'].forEach(name => {
+    const p = localStorage.getItem(`photo_${name}`); if (p) updateProfilePhoto(name, p);
+  });
+}
+
 // ══ Enter app ══
 function enterApp(name, avatar, desc, th) {
   student = name; theme = th;
+  histFilter = 'Alle';
+  clearConversation();
   document.getElementById('landing').classList.remove('active');
   document.getElementById('app').classList.add('active');
   document.getElementById('app-header').className = `app-header ${th}`;
-  document.getElementById('header-avatar').textContent = avatar;
   document.getElementById('header-name').textContent = name;
   document.getElementById('tutor-dot').className = `tutor-dot ${th}`;
   document.getElementById('ask-btn').className = `ask-btn ${th}`;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active','mathea','silja','felicia'));
 
+  // Show profile photo or emoji in header
+  const headerAvatar = document.getElementById('header-avatar');
+  const photo = localStorage.getItem(`photo_${name}`);
+  if (photo) {
+    headerAvatar.innerHTML = `<img src="${photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6)"/>`;
+  } else {
+    headerAvatar.textContent = avatar;
+  }
+
   buildSubjects();
   switchTab('tutor');
-  localStorage.setItem('last_student', JSON.stringify({name, avatar, desc, th}));
 }
 
 function goBack() {
@@ -740,11 +782,22 @@ async function loadHistory(append=false) {
     const date = d.toLocaleDateString('nb-NO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
     const preview = item.user_question ? item.user_question.slice(0,70)+(item.user_question.length>70?'…':'') : '(Oppgave fra fil)';
     const el = document.createElement('div'); el.className='history-item';
-    el.innerHTML = `<div class="hist-meta"><span class="subj-tag">${item.subject}</span><span class="hist-date">${date}</span>${item.helpful===true?'👍':item.helpful===false?'👎':''}</div><div class="hist-q">${preview}</div><div class="hist-answer">${item.tutor_response}</div>`;
-    el.onclick=()=>el.classList.toggle('open');
+    el.innerHTML = `<div class="hist-meta"><span class="subj-tag">${item.subject}</span><span class="hist-date">${date}</span>${item.helpful===true?'👍':item.helpful===false?'👎':''}<button class="conv-delete-btn" title="Slett">🗑</button></div><div class="hist-q">${preview}</div><div class="hist-answer"></div>`;
+    const answerEl = el.querySelector('.hist-answer');
+    answerEl.innerHTML = marked.parse(item.tutor_response || '');
+    el.querySelector('.conv-delete-btn').onclick = e => { e.stopPropagation(); deleteConversation(item.id, el); };
+    el.onclick = () => el.classList.toggle('open');
     document.getElementById('history-list').appendChild(el);
   });
   histOffset += (data||[]).length;
+}
+
+async function deleteConversation(id, el) {
+  if (!confirm('Slette denne samtalen?')) return;
+  await db.from('conversations').delete().eq('id', id);
+  el.remove();
+  const list = document.getElementById('history-list');
+  if (!list.children.length) list.innerHTML = '<p class="history-empty">📭 Ingen samtaler ennå.</p>';
 }
 
 // ══ Calendar / Events ══
@@ -844,9 +897,8 @@ async function deleteFile(id) {
   loadFiles();
 }
 
-// ══ Auto-login last student ══
-const last = JSON.parse(localStorage.getItem('last_student')||'null');
-if (last) enterApp(last.name, last.avatar, last.desc, last.th);
+// ══ Load profile photos on landing ══
+loadAllPhotos();
 
 // ══ Service Worker ══
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});

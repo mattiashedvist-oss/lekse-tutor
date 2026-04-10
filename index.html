@@ -272,6 +272,21 @@
     .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
     .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
 
+    /* Compact mode: hide input clutter when conversation is active */
+    #tab-tutor.has-conversation .subject-scroll,
+    #tab-tutor.has-conversation #model-badge-area,
+    #tab-tutor.has-conversation .upload-actions,
+    #tab-tutor.has-conversation .upload-zone,
+    #tab-tutor.has-conversation .quick-actions { display: none !important; }
+    #tab-tutor.has-conversation .card { margin: 6px 12px 4px; padding: 8px 10px; }
+    #tab-tutor.has-conversation .voice-row textarea { min-height: 38px; padding: 8px 10px; font-size: 0.84rem; }
+    #tab-tutor.has-conversation .ask-btn { padding: 10px; font-size: 0.88rem; }
+
+    /* Flashcard banner (separate from chat bubble) */
+    .fc-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 12px 8px; padding: 10px; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px dashed #e2e8f0; animation: msgSlideIn 0.3s ease-out; }
+    .fc-banner button { padding: 6px 14px; border-radius: 16px; border: 1px solid var(--student-color, #6366f1); background: #fff; font-size: 0.8rem; cursor: pointer; color: var(--student-color, #6366f1); font-weight: 600; transition: all 0.15s; }
+    .fc-banner button:hover { background: var(--student-color, #6366f1); color: #fff; }
+
     /* Thinking indicator */
     .chat-thinking { background: #fff; border-radius: 14px; padding: 16px 18px; margin: 4px 0 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: center; border-left: 3px solid var(--student-color, #6366f1); }
     .thinking-dots { display: flex; gap: 5px; }
@@ -839,6 +854,16 @@ function renderConversation() {
   });
   thread.lastElementChild?.scrollIntoView({ behavior:'smooth', block:'nearest' });
   document.getElementById('clear-btn').style.display = conversationMessages.length ? '' : 'none';
+  // Toggle compact mode
+  const tutor = document.getElementById('tab-tutor');
+  const qInput = document.getElementById('question-input');
+  if (conversationMessages.length) {
+    tutor.classList.add('has-conversation');
+    qInput.placeholder = 'Still et oppfølgingsspørsmål…';
+  } else {
+    tutor.classList.remove('has-conversation');
+    qInput.placeholder = 'Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…';
+  }
 }
 
 function clearConversation() {
@@ -849,6 +874,8 @@ function clearConversation() {
   document.getElementById('conversation-thread').innerHTML = '';
   document.getElementById('error-box').style.display = 'none';
   document.getElementById('clear-btn').style.display = 'none';
+  document.getElementById('tab-tutor').classList.remove('has-conversation');
+  document.getElementById('question-input').placeholder = 'Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…';
   currentConvId = null;
 }
 
@@ -1076,18 +1103,16 @@ let fcCards = [], fcIndex = 0, fcMode = 'new'; // mode: 'new' or 'review'
 
 function renderConversationWithFlashcards() {
   renderConversation();
-  // Add flashcard button to last assistant message
+  // Add flashcard banner below conversation (separate from chat bubble)
   if (conversationMessages.length >= 2) {
     const thread = document.getElementById('conversation-thread');
-    const lastTutor = thread.querySelector('.chat-tutor:last-of-type');
-    if (lastTutor && !lastTutor.querySelector('.fc-gen-btn')) {
-      const btn = document.createElement('button');
-      btn.className = 'quick-action-btn fc-gen-btn';
-      btn.style.marginTop = '8px';
-      btn.textContent = '🃏 Lag flashcards';
-      btn.onclick = (e) => { e.stopPropagation(); generateFlashcards(); };
-      lastTutor.appendChild(btn);
-    }
+    // Remove existing banner if any
+    const old = thread.querySelector('.fc-banner');
+    if (old) old.remove();
+    const banner = document.createElement('div');
+    banner.className = 'fc-banner';
+    banner.innerHTML = `<span style="font-size:0.82rem;color:#64748b">Vil du øve?</span><button onclick="generateFlashcards()">🃏 Lag flashcards</button>`;
+    thread.appendChild(banner);
   }
 }
 
@@ -1099,7 +1124,7 @@ async function generateFlashcards() {
   const qText = lastQ?.content?.find(c=>c.type==='text')?.text || '';
   const aText = lastA?.content?.[0]?.text || '';
 
-  const btn = document.querySelector('.fc-gen-btn');
+  const btn = document.querySelector('.fc-banner button');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Genererer…'; }
 
   try {

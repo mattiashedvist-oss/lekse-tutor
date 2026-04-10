@@ -207,21 +207,22 @@
     .tutor-dot.mathea  { background: linear-gradient(135deg, var(--mathea),  var(--mathea2)); }
     .tutor-dot.silja   { background: linear-gradient(135deg, var(--silja),   var(--silja2)); }
     .tutor-dot.felicia { background: linear-gradient(135deg, var(--felicia), var(--felicia2)); }
-    .response-text { padding: 10px 16px 14px; font-size: 0.9rem; line-height: 1.75; color: #374151; overflow-wrap: break-word; word-break: break-word; }
+    .response-text { padding: 10px 16px 14px; font-size: 0.9rem; line-height: 1.75; color: #374151; overflow-wrap: anywhere; }
     .response-text h1,.response-text h2,.response-text h3 { font-size: 1rem; font-weight: 700; margin: 12px 0 4px; color: #1e293b; }
-    .response-text p { margin-bottom: 8px; max-width: 100%; overflow-wrap: break-word; }
+    .response-text p { margin-bottom: 8px; }
     .response-text ul,.response-text ol { padding-left: 20px; margin-bottom: 8px; }
     .response-text li { margin-bottom: 4px; }
-    .response-text code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.82em; word-break: break-all; }
-    .response-text pre { background: #f1f5f9; padding: 10px; border-radius: 8px; overflow-x: auto; margin-bottom: 8px; max-width: 100%; }
+    .response-text code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.82em; }
+    .response-text pre { background: #f1f5f9; padding: 10px; border-radius: 8px; overflow-x: auto; margin-bottom: 8px; }
+    .response-text table { display: block; overflow-x: auto; max-width: 100%; }
     .response-text strong { font-weight: 700; color: #1e293b; }
-    .response-text .katex-display { overflow-x: auto; max-width: 100%; padding: 4px 0; }
-    .response-text .katex { font-size: 0.95em; overflow-x: auto; max-width: 100%; display: inline-block; }
+    .response-text .katex-display { overflow-x: auto; padding: 4px 0; }
+    .response-text .katex { font-size: 0.95em; }
 
     /* Chat thread */
     #conversation-thread { padding: 0 12px 12px; overflow-x: hidden; max-width: 100vw; }
-    .chat-user { background: #ede9fe; border-radius: 14px 14px 4px 14px; padding: 10px 14px; margin: 10px 0 10px 32px; font-size: 0.88rem; color: #1e293b; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
-    .chat-tutor { background: #fff; border-radius: 14px; padding: 12px 14px; margin: 4px 0 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: flex-start; max-width: calc(100vw - 24px); overflow-x: auto; }
+    .chat-user { background: #ede9fe; border-radius: 14px 14px 4px 14px; padding: 10px 14px; margin: 10px 0 10px 32px; font-size: 0.88rem; color: #1e293b; line-height: 1.5; overflow-wrap: anywhere; }
+    .chat-tutor { background: #fff; border-radius: 14px; padding: 12px 14px; margin: 4px 0 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: flex-start; max-width: calc(100vw - 24px); overflow-x: hidden; }
     .chat-robot { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
     .chat-tutor .response-text { flex: 1; padding: 0; min-width: 0; }
     .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
@@ -312,7 +313,7 @@
     .subj-tag { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #ede9fe; color: #6d28d9; }
     .hist-date { font-size: 0.72rem; color: #94a3b8; }
     .hist-q { font-size: 0.85rem; color: #374151; font-weight: 500; }
-    .hist-answer { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; font-size: 0.85rem; color: #374151; line-height: 1.7; overflow-wrap: break-word; word-break: break-word; }
+    .hist-answer { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; font-size: 0.85rem; color: #374151; line-height: 1.7; overflow-wrap: anywhere; }
     .history-item.open .hist-answer { display: block; }
     .history-empty { text-align: center; color: #94a3b8; padding: 48px 20px; font-size: 0.9rem; }
 

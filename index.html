@@ -45,7 +45,8 @@
 
     /* ════════════════ LANDING ════════════════ */
     #landing {
-      background: linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #6366f1 100%);
+      background-color: #312e81;
+      background-image: linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #6366f1 100%);
       background-size: 200% 200%;
       animation: gradientShift 8s ease-in-out infinite alternate;
       align-items: center; justify-content: center; padding: 24px;
@@ -143,6 +144,8 @@
 
     /* Tab content area */
     .tab-content { flex: 1; overflow-y: auto; padding-bottom: calc(64px + var(--safe-bottom)); animation: fadeIn 0.25s ease; }
+    #tab-tutor.has-conversation { display: flex; flex-direction: column; overflow-y: hidden; }
+    #tab-tutor.has-conversation > * { flex-shrink: 0; }
 
     /* Bottom nav */
     .bottom-nav {
@@ -272,15 +275,26 @@
     .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
     .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
 
-    /* Compact mode: hide input clutter when conversation is active */
+    /* Compact mode: chat-at-bottom layout when conversation is active */
     #tab-tutor.has-conversation .subject-scroll,
     #tab-tutor.has-conversation #model-badge-area,
     #tab-tutor.has-conversation .upload-actions,
     #tab-tutor.has-conversation .upload-zone,
-    #tab-tutor.has-conversation .quick-actions { display: none !important; }
-    #tab-tutor.has-conversation .card { margin: 6px 12px 4px; padding: 8px 10px; }
-    #tab-tutor.has-conversation .voice-row textarea { min-height: 38px; padding: 8px 10px; font-size: 0.84rem; }
-    #tab-tutor.has-conversation .ask-btn { padding: 10px; font-size: 0.88rem; }
+    #tab-tutor.has-conversation .file-previews,
+    #tab-tutor.has-conversation .quick-actions,
+    #tab-tutor.has-conversation .error-box { display: none !important; }
+    #tab-tutor.has-conversation .card { order: 3; margin: 0 8px 4px; padding: 8px; border-radius: 12px; box-shadow: 0 -1px 4px rgba(0,0,0,0.06); }
+    #tab-tutor.has-conversation #conversation-thread { order: 1; flex: 1; overflow-y: auto; }
+    #tab-tutor.has-conversation #clear-btn { order: 2; margin: 0 12px 4px; }
+    #tab-tutor.has-conversation .voice-row { margin-bottom: 4px; }
+    #tab-tutor.has-conversation .voice-row textarea { min-height: 36px; padding: 8px 10px; font-size: 0.84rem; }
+    #tab-tutor.has-conversation .ask-btn { padding: 10px; font-size: 0.85rem; border-radius: 10px; }
+    #tab-tutor.has-conversation .tutor-mode-row { display: none; }
+
+    /* Tutor mode toggle */
+    .tutor-mode-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .mode-btn { flex: 1; padding: 10px 8px; border-radius: 10px; border: 2px solid #e2e8f0; background: #fff; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-align: center; color: #64748b; transition: all 0.15s; }
+    .mode-btn.active { border-color: var(--student-color, #6366f1); background: var(--student-color, #6366f1); color: #fff; }
 
     /* Flashcard banner (separate from chat bubble) */
     .fc-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 12px 8px; padding: 10px; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px dashed #e2e8f0; animation: msgSlideIn 0.3s ease-out; }
@@ -530,6 +544,11 @@
         <button class="quick-action-btn" onclick="quickAction('explain')">💡 Forklar innholdet</button>
       </div>
 
+      <div class="tutor-mode-row" id="tutor-mode-row">
+        <button class="mode-btn active" id="mode-teach" onclick="setTutorMode('teach')">🎓 Lær meg</button>
+        <button class="mode-btn" id="mode-quick" onclick="setTutorMode('quick')">⚡ Gi svar</button>
+      </div>
+
       <div class="voice-row">
         <textarea class="question-input" id="question-input" placeholder="Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…"></textarea>
         <button class="mic-btn" id="mic-btn" onclick="toggleVoice()" title="Snakk inn spørsmålet">🎤</button>
@@ -649,17 +668,60 @@ const SUBJECTS = {
 };
 
 // ══ System prompts ══
-const PROMPTS = {
-  mathea:  (subj) => `Du er en vennlig og dyktig privatlærer for Mathea, en 18-åring på VGS. Fag: ${subj}. Svar ALLTID på norsk. Forklar steg for steg, vis alle utregninger, bruk faglige termer men forklar dem. Avslutt med oppmuntring.`,
-  silja:   (subj) => `Du er en tålmodig privatlærer for Silja, 13 år på ungdomsskolen. Fag: ${subj}. Svar ALLTID på norsk. Bruk enkelt, klart språk. Gi relaterbare eksempler. Forklar ett steg om gangen. Vær oppmuntrende og vennlig.`,
-  felicia: (subj) => `Du er en morsom og snill lærer for Felicia, 8 år på barneskolen. Fag: ${subj}. Svar ALLTID på norsk. Bruk veldig enkle ord. Vær entusiastisk og positiv. Bruk gjerne morsomme eksempler. Hold forklaringen kort og enkel.`
+const PROMPTS_TEACH = {
+  mathea: (subj) => `Du er en erfaren og engasjert mentor for Mathea, 18 år på VGS. Fag: ${subj}. Svar ALLTID på norsk.
+
+Din undervisningsmetode:
+- Bruk sokratisk metode: still ledende spørsmål som hjelper Mathea tenke selv, f.eks. "Hva tror du skjer hvis vi...?" eller "Kan du se et mønster her?"
+- IKKE gi hele svaret med en gang. Vis første steg, forklar logikken, og spør om hun forstår før du går videre.
+- Bruk faglige termer, men forklar dem kort første gang.
+- Koble nye konsepter til ting hun allerede vet.
+- Utfordre henne intellektuelt — still motspørsmål som "Stemmer det alltid?" eller "Hva er unntaket?"
+- Vis alle utregninger steg for steg med forklaring av HVORFOR hvert steg gjøres.
+- Avslutt med oppmuntring og et forslag til hva hun kan prøve selv.`,
+
+  silja: (subj) => `Du er en tålmodig og engasjert lærer for Silja, 13 år på ungdomsskolen. Fag: ${subj}. Svar ALLTID på norsk.
+
+Din undervisningsmetode:
+- Forklar ett steg om gangen. Etter hvert steg, spør "Henger du med så langt?" eller "Gir dette mening?"
+- Bruk eksempler fra hverdagen som en 13-åring kan relatere til.
+- IKKE gi hele svaret med en gang. Gi hint og la henne prøve selv først.
+- Når hun gjør noe riktig, si det tydelig: "Bra tenkt!" eller "Akkurat, du er på rett spor!"
+- Bruk enkelt og klart språk, men ikke barnslig.
+- Hvis noe er vanskelig, prøv å forklare det på en helt annen måte med en annen analogi.
+- Avslutt med en kort oppsummering og et lite spørsmål hun kan tenke på.`,
+
+  felicia: (subj) => `Du er en morsom, snill og entusiastisk lærer for Felicia, 8 år på barneskolen. Fag: ${subj}. Svar ALLTID på norsk.
+
+Din undervisningsmetode:
+- Gjør læring til en lek! Bruk fortellinger, morsomme eksempler og ting barn synes er kule.
+- IKKE gi svaret med en gang. Spør "Kan du gjette hva som skjer?" eller "Hva tror DU?"
+- Bruk veldig enkle ord. Korte setninger.
+- Feire hvert riktig svar: "WOW! Du er jo kjempeflink!" eller "Helt riktig, stjerneelev!"
+- Forklar ting med ting hun kjenner: godteri, dyr, leker, eventyr.
+- Ta det sakte. Bare ett nytt konsept om gangen.
+- Bruk gjerne emojis for å gjøre det visuelt og morsomt.
+- Avslutt med å si hvor flink hun er og kanskje en liten utfordring.`
+};
+
+const PROMPTS_QUICK = {
+  mathea: (subj) => `Du er en privatlærer for Mathea, 18 år på VGS. Fag: ${subj}. Svar ALLTID på norsk. Gi et klart, direkte og fullstendig svar. Vis alle utregninger steg for steg. Bruk faglige termer men forklar dem. Vær effektiv og presis.`,
+  silja:  (subj) => `Du er en privatlærer for Silja, 13 år på ungdomsskolen. Fag: ${subj}. Svar ALLTID på norsk. Gi et klart og direkte svar med enkelt språk. Forklar steg for steg. Bruk relaterbare eksempler.`,
+  felicia:(subj) => `Du er en snill lærer for Felicia, 8 år på barneskolen. Fag: ${subj}. Svar ALLTID på norsk. Gi et kort og enkelt svar. Bruk veldig enkle ord og morsomme eksempler. Vær positiv.`
 };
 
 // ══ State ══
 let student = null, theme = null, selectedSubject = '', attachments = [], currentConvId = null, conversationMessages = [];
+let tutorMode = 'teach'; // 'teach' or 'quick'
 const uploadZone = document.getElementById('upload-zone');
 
 function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
+
+function setTutorMode(mode) {
+  tutorMode = mode;
+  document.getElementById('mode-teach').className = 'mode-btn' + (mode === 'teach' ? ' active' : '');
+  document.getElementById('mode-quick').className = 'mode-btn' + (mode === 'quick' ? ' active' : '');
+}
 
 // ══ Profile photos (stored in Supabase, shared across devices) ══
 async function savePhoto(name, input) {
@@ -876,6 +938,7 @@ function clearConversation() {
   document.getElementById('clear-btn').style.display = 'none';
   document.getElementById('tab-tutor').classList.remove('has-conversation');
   document.getElementById('question-input').placeholder = 'Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…';
+  setTutorMode('teach');
   currentConvId = null;
 }
 
@@ -910,7 +973,8 @@ async function askTutor() {
   conversationMessages.push({ role:'user', content: userContent });
 
   const model = modelForSubject(selectedSubject);
-  const systemPrompt = PROMPTS[theme](selectedSubject);
+  const promptSet = tutorMode === 'teach' ? PROMPTS_TEACH : PROMPTS_QUICK;
+  const systemPrompt = promptSet[theme](selectedSubject);
 
   try {
     const res = await fetch(EDGE_FN, {

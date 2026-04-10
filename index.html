@@ -834,11 +834,6 @@ function renderConversation() {
         { left:'\\[', right:'\\]', display:true }
       ], throwOnError: false });
       div.appendChild(robot); div.appendChild(content);
-      if (idx === conversationMessages.length - 1) {
-        const row = document.createElement('div'); row.className = 'rating-row';
-        row.innerHTML = `<span>Nyttig?</span><button class="rate-btn" id="rate-yes" onclick="rate(true)">👍</button><button class="rate-btn" id="rate-no" onclick="rate(false)">👎</button><span class="saved-tag" id="saved-tag" style="display:none">✅ Lagret</span>`;
-        div.appendChild(row);
-      }
       thread.appendChild(div);
     }
   });

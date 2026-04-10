@@ -223,6 +223,57 @@
     .chat-tutor .response-text { flex: 1; padding: 0; }
     .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
     .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* Quick actions row */
+    .quick-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; display: none; }
+    .quick-actions.visible { display: flex; }
+    .quick-action-btn { padding: 6px 12px; border-radius: 16px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.78rem; cursor: pointer; color: #6366f1; font-weight: 600; transition: all 0.15s; }
+    .quick-action-btn:hover { background: #6366f1; color: #fff; }
+
+    /* Voice button */
+    .voice-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+    .voice-row textarea { flex: 1; margin-bottom: 0; }
+    .mic-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #e2e8f0; background: #fff; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .mic-btn.recording { background: #ef4444; border-color: #ef4444; animation: pulse-mic 1s ease-in-out infinite; }
+    @keyframes pulse-mic { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }
+
+    /* Flashcard overlay */
+    .fc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .fc-overlay.open { display: flex; }
+    .fc-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 380px; padding: 0 4px 12px; }
+    .fc-header span { color: #fff; font-weight: 700; font-size: 1rem; }
+    .fc-close { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 1.5rem; cursor: pointer; }
+    .fc-deck { width: 100%; max-width: 380px; height: 240px; perspective: 800px; margin-bottom: 16px; }
+    .fc-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s; cursor: pointer; }
+    .fc-card.flipped { transform: rotateY(180deg); }
+    .fc-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 1rem; line-height: 1.6; overflow-y: auto; }
+    .fc-front { background: #fff; color: #1e293b; }
+    .fc-front::before { content: 'Spørsmål'; position: absolute; top: 10px; left: 14px; font-size: 0.68rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .fc-back { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; transform: rotateY(180deg); }
+    .fc-back::before { content: 'Svar'; position: absolute; top: 10px; left: 14px; font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+    .fc-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .fc-nav button { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; cursor: pointer; }
+    .fc-nav button:hover { background: rgba(255,255,255,0.25); }
+    .fc-counter { color: rgba(255,255,255,0.7); font-size: 0.85rem; min-width: 60px; text-align: center; }
+    .fc-actions { display: flex; gap: 10px; }
+    .fc-actions button { padding: 10px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; }
+    .fc-save-btn { background: #10b981; color: #fff; }
+    .fc-review-btn { background: rgba(255,255,255,0.15); color: #fff; }
+    .fc-tip { color: rgba(255,255,255,0.5); font-size: 0.72rem; margin-top: 12px; }
+
+    /* Study plan */
+    .study-plan-btn { width: calc(100% - 24px); margin: 0 12px 8px; padding: 12px; border: 2px dashed #a5b4fc; border-radius: 12px; background: #eef2ff; font-size: 0.9rem; color: #4f46e5; cursor: pointer; text-align: center; font-weight: 600; }
+    .study-plan-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .sp-form { background: #fff; border-radius: var(--radius); margin: 0 12px 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: none; }
+    .sp-form.open { display: block; }
+    .sp-result { background: #fff; border-radius: var(--radius); margin: 0 12px 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: none; }
+    .sp-result.open { display: block; }
+    .sp-day { padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+    .sp-day:last-child { border-bottom: none; }
+    .sp-day-date { font-weight: 700; font-size: 0.82rem; color: #6366f1; }
+    .sp-day-title { font-size: 0.88rem; color: #1e293b; margin-top: 2px; }
+    .sp-day-notes { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+    .sp-add-all { width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 10px; background: #6366f1; color: #fff; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
     .rating-row { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
     .rating-row span { font-size: 0.8rem; color: #94a3b8; }
     .rate-btn { padding: 5px 12px; border-radius: 16px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; cursor: pointer; }
@@ -394,7 +445,17 @@
       <!-- File previews -->
       <div class="file-previews" id="file-previews"></div>
 
-      <textarea class="question-input" id="question-input" placeholder="Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…"></textarea>
+      <!-- Quick actions (appear when files attached) -->
+      <div class="quick-actions" id="quick-actions">
+        <button class="quick-action-btn" onclick="quickAction('essay')">✍️ Sjekk rettskriving</button>
+        <button class="quick-action-btn" onclick="quickAction('feedback')">📝 Gi tilbakemelding</button>
+        <button class="quick-action-btn" onclick="quickAction('explain')">💡 Forklar innholdet</button>
+      </div>
+
+      <div class="voice-row">
+        <textarea class="question-input" id="question-input" placeholder="Skriv spørsmålet ditt her, eller last opp en oppgave ovenfor…"></textarea>
+        <button class="mic-btn" id="mic-btn" onclick="toggleVoice()" title="Snakk inn spørsmålet">🎤</button>
+      </div>
 
       <button class="ask-btn" id="ask-btn" onclick="askTutor()">Spør tutoren! 🚀</button>
       <div class="error-box" id="error-box"></div>
@@ -407,11 +468,27 @@
   </div><!-- /tab-tutor -->
 
   <div class="tab-content" id="tab-history" style="display:none">
+    <button class="study-plan-btn" style="border-color:#a78bfa;background:#f5f3ff;margin-top:12px" onclick="reviewFlashcards()">📚 Mine flashcards</button>
     <div class="filter-scroll" id="history-filter-row"></div>
     <div id="history-list"></div>
   </div>
 
   <div class="tab-content" id="tab-calendar" style="display:none">
+    <button class="study-plan-btn" onclick="toggleStudyPlanForm()">📋 Lag studieplan for prøve</button>
+    <div class="sp-form" id="sp-form">
+      <div class="form-row"><label>Fag</label><input id="sp-subject" placeholder="f.eks. Matematikk"/></div>
+      <div class="form-row"><label>Tema / pensum</label><textarea id="sp-topic" rows="2" placeholder="f.eks. Integraler, kapittel 5-7"></textarea></div>
+      <div class="form-row"><label>Prøvedato</label><input type="date" id="sp-date"/></div>
+      <div class="form-btns">
+        <button class="btn-cancel" onclick="toggleStudyPlanForm()">Avbryt</button>
+        <button class="btn-save" onclick="generateStudyPlan()">📋 Generer plan</button>
+      </div>
+    </div>
+    <div class="sp-result" id="sp-result">
+      <strong style="font-size:0.9rem">📋 Din studieplan</strong>
+      <div id="sp-days"></div>
+      <button class="sp-add-all" id="sp-add-all" onclick="addPlanToCalendar()">📅 Legg alt i kalenderen</button>
+    </div>
     <button class="add-event-btn" onclick="toggleEventForm()">＋ Legg til prøve / frist / påminnelse</button>
     <div class="event-form" id="event-form">
       <div class="form-row"><label>Tittel</label><input id="ev-title" placeholder="f.eks. Matematikkprøve" /></div>
@@ -450,6 +527,27 @@
   </nav>
 
 </div><!-- /app -->
+
+<!-- Flashcard overlay -->
+<div class="fc-overlay" id="fc-overlay">
+  <div class="fc-header">
+    <span id="fc-title">🃏 Flashcards</span>
+    <button class="fc-close" onclick="closeFlashcards()">✕</button>
+  </div>
+  <div class="fc-deck">
+    <div class="fc-card" id="fc-card" onclick="flipCard()">
+      <div class="fc-face fc-front" id="fc-front"></div>
+      <div class="fc-face fc-back" id="fc-back"></div>
+    </div>
+  </div>
+  <div class="fc-nav">
+    <button onclick="fcNav(-1)">← Forrige</button>
+    <span class="fc-counter" id="fc-counter">1 / 5</span>
+    <button onclick="fcNav(1)">Neste →</button>
+  </div>
+  <div class="fc-actions" id="fc-actions"></div>
+  <div class="fc-tip">Trykk på kortet for å snu</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <script>
@@ -625,6 +723,7 @@ function renderPreviews() {
     c.appendChild(pill);
   });
   document.getElementById('upload-zone').style.display = attachments.length ? 'none' : '';
+  updateQuickActions();
 }
 
 function removeAttachment(i) { attachments.splice(i, 1); renderPreviews(); }
@@ -726,7 +825,7 @@ async function askTutor() {
     const answer = data.content?.[0]?.text || '(Ingen svar)';
 
     conversationMessages.push({ role:'assistant', content:[{ type:'text', text: answer }] });
-    renderConversation();
+    renderConversationWithFlashcards();
 
     document.getElementById('question-input').value = '';
     attachments = []; renderPreviews();
@@ -896,6 +995,281 @@ async function deleteFile(id) {
   await db.from('school_files').delete().eq('id',id);
   loadFiles();
 }
+
+// ══════════════════════════════════════
+// FEATURE 1: FLASHCARD GENERATOR
+// ══════════════════════════════════════
+let fcCards = [], fcIndex = 0, fcMode = 'new'; // mode: 'new' or 'review'
+
+function renderConversationWithFlashcards() {
+  renderConversation();
+  // Add flashcard button to last assistant message
+  if (conversationMessages.length >= 2) {
+    const thread = document.getElementById('conversation-thread');
+    const lastTutor = thread.querySelector('.chat-tutor:last-of-type');
+    if (lastTutor && !lastTutor.querySelector('.fc-gen-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'quick-action-btn fc-gen-btn';
+      btn.style.marginTop = '8px';
+      btn.textContent = '🃏 Lag flashcards';
+      btn.onclick = (e) => { e.stopPropagation(); generateFlashcards(); };
+      lastTutor.appendChild(btn);
+    }
+  }
+}
+
+async function generateFlashcards() {
+  const lastQ = conversationMessages.filter(m=>m.role==='user').pop();
+  const lastA = conversationMessages.filter(m=>m.role==='assistant').pop();
+  if (!lastA) return;
+
+  const qText = lastQ?.content?.find(c=>c.type==='text')?.text || '';
+  const aText = lastA?.content?.[0]?.text || '';
+
+  const btn = document.querySelector('.fc-gen-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Genererer…'; }
+
+  try {
+    const res = await fetch(EDGE_FN, {
+      method: 'POST',
+      headers: { 'content-type':'application/json' },
+      body: JSON.stringify({
+        model: MODELS.sonnet,
+        max_tokens: 1500,
+        system: `Du lager flashcards for en norsk elev. Basert på spørsmål og svar, lag 5-8 flashcards. Hvert kort har et spørsmål og et svar. Svar KUN med en JSON-array: [{"q":"spørsmål","a":"svar"}]. Ingen annen tekst.`,
+        messages: [{ role:'user', content:[{type:'text', text:`Spørsmål: ${qText}\n\nForklaring: ${aText}\n\nLag flashcards basert på dette.`}] }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '[]';
+    // Extract JSON from response (handle markdown code blocks)
+    const jsonStr = raw.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
+    fcCards = JSON.parse(jsonStr);
+    fcIndex = 0; fcMode = 'new';
+    openFlashcards(`${selectedSubject} – Flashcards`);
+  } catch(err) {
+    alert('Kunne ikke generere flashcards. Prøv igjen.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🃏 Lag flashcards'; }
+  }
+}
+
+function openFlashcards(title) {
+  document.getElementById('fc-title').textContent = title || '🃏 Flashcards';
+  document.getElementById('fc-overlay').classList.add('open');
+  showFcCard();
+  const actions = document.getElementById('fc-actions');
+  if (fcMode === 'new') {
+    actions.innerHTML = `<button class="fc-save-btn" onclick="saveFlashcards()">💾 Lagre</button>`;
+  } else {
+    actions.innerHTML = `<button class="fc-review-btn" onclick="closeFlashcards()">Lukk</button>`;
+  }
+}
+
+function closeFlashcards() { document.getElementById('fc-overlay').classList.remove('open'); }
+
+function flipCard() { document.getElementById('fc-card').classList.toggle('flipped'); }
+
+function showFcCard() {
+  if (!fcCards.length) return;
+  document.getElementById('fc-card').classList.remove('flipped');
+  document.getElementById('fc-front').textContent = fcCards[fcIndex].q;
+  document.getElementById('fc-back').textContent = fcCards[fcIndex].a;
+  document.getElementById('fc-counter').textContent = `${fcIndex+1} / ${fcCards.length}`;
+}
+
+function fcNav(dir) {
+  fcIndex = (fcIndex + dir + fcCards.length) % fcCards.length;
+  showFcCard();
+}
+
+async function saveFlashcards() {
+  const { error } = await db.from('flashcards').insert({
+    student_name: student,
+    subject: selectedSubject,
+    topic: conversationMessages.find(m=>m.role==='user')?.content?.find(c=>c.type==='text')?.text?.slice(0,80) || selectedSubject,
+    cards: fcCards
+  });
+  if (!error) {
+    const btn = document.querySelector('.fc-save-btn');
+    if (btn) { btn.textContent = '✅ Lagret!'; btn.disabled = true; }
+  }
+}
+
+async function reviewFlashcards() {
+  const { data } = await db.from('flashcards').select('*').eq('student_name', student).order('created_at',{ascending:false}).limit(20);
+  if (!data?.length) { alert('Ingen lagrede flashcards ennå!'); return; }
+  // Show most recent set
+  fcCards = data[0].cards;
+  fcIndex = 0; fcMode = 'review';
+  openFlashcards(`📚 ${data[0].subject} – ${data[0].topic?.slice(0,30) || ''}`);
+}
+
+// ══════════════════════════════════════
+// FEATURE 2: ESSAY FEEDBACK (Quick Actions)
+// ══════════════════════════════════════
+function updateQuickActions() {
+  const hasTextFile = attachments.some(a => a.kind === 'text' || a.kind === 'pdf');
+  const hasAnyFile = attachments.length > 0;
+  const qa = document.getElementById('quick-actions');
+  qa.className = 'quick-actions' + (hasAnyFile ? ' visible' : '');
+}
+
+function quickAction(type) {
+  const prompts = {
+    essay: 'Sjekk teksten for rettskrivingsfeil, grammatikk og tegnsetting. List opp feilene og forklar hva som er galt. Svar på norsk.',
+    feedback: 'Gi en grundig tilbakemelding på denne teksten. Vurder struktur, innhold, argumentasjon og språk. Gi konkrete forbedringsforslag. Svar på norsk.',
+    explain: 'Forklar innholdet i dette dokumentet på en enkel og tydelig måte. Svar på norsk.'
+  };
+  document.getElementById('question-input').value = prompts[type] || '';
+  askTutor();
+}
+
+// ══════════════════════════════════════
+// FEATURE 3: STUDY PLAN GENERATOR
+// ══════════════════════════════════════
+let spFormOpen = false, studyPlanData = [];
+
+function toggleStudyPlanForm() {
+  spFormOpen = !spFormOpen;
+  document.getElementById('sp-form').className = 'sp-form' + (spFormOpen ? ' open' : '');
+  document.getElementById('sp-result').className = 'sp-result';
+  if (spFormOpen) {
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    document.getElementById('sp-date').value = d.toISOString().split('T')[0];
+  }
+}
+
+async function generateStudyPlan() {
+  const subject = document.getElementById('sp-subject').value.trim();
+  const topic = document.getElementById('sp-topic').value.trim();
+  const examDate = document.getElementById('sp-date').value;
+  if (!subject || !examDate) { alert('Fyll inn fag og dato.'); return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const saveBtn = document.querySelector('#sp-form .btn-save');
+  saveBtn.disabled = true; saveBtn.textContent = '⏳ Genererer…';
+
+  try {
+    const res = await fetch(EDGE_FN, {
+      method: 'POST',
+      headers: { 'content-type':'application/json' },
+      body: JSON.stringify({
+        model: MODELS.sonnet,
+        max_tokens: 2000,
+        system: `Du er en studieplanlegger for en norsk elev. Lag en realistisk dag-for-dag studieplan. Start fra i dag og bygg opp gradvis til mer avanserte emner. Svar KUN med en JSON-array: [{"date":"YYYY-MM-DD","title":"Hva å studere","notes":"Kort beskrivelse"}]. Maks 14 dager. Ingen annen tekst.`,
+        messages: [{ role:'user', content:[{type:'text', text:`Fag: ${subject}\nTema/pensum: ${topic || 'Generelt'}\nPrøvedato: ${examDate}\nI dag: ${today}\n\nLag studieplan.`}] }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '[]';
+    const jsonStr = raw.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
+    studyPlanData = JSON.parse(jsonStr);
+    // Add subject to each entry for calendar storage
+    studyPlanData.forEach(d => d.subject = subject);
+
+    renderStudyPlan();
+    document.getElementById('sp-form').className = 'sp-form';
+    spFormOpen = false;
+  } catch(err) {
+    alert('Kunne ikke generere studieplan. Prøv igjen.');
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = '📋 Generer plan';
+  }
+}
+
+function renderStudyPlan() {
+  const days = document.getElementById('sp-days');
+  days.innerHTML = '';
+  const dayNames = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  studyPlanData.forEach(d => {
+    const dt = new Date(d.date + 'T12:00:00');
+    const dayName = dayNames[dt.getDay()];
+    const dateStr = dt.toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
+    const div = document.createElement('div'); div.className = 'sp-day';
+    div.innerHTML = `<div class="sp-day-date">${dayName} ${dateStr}</div><div class="sp-day-title">${d.title}</div>${d.notes ? `<div class="sp-day-notes">${d.notes}</div>` : ''}`;
+    days.appendChild(div);
+  });
+  document.getElementById('sp-result').className = 'sp-result open';
+}
+
+async function addPlanToCalendar() {
+  const btn = document.getElementById('sp-add-all');
+  btn.disabled = true; btn.textContent = '⏳ Legger til…';
+  for (const d of studyPlanData) {
+    await db.from('events').insert({
+      student_name: student,
+      title: d.title,
+      event_date: d.date,
+      subject: d.subject || null,
+      event_type: 'reminder',
+      notes: d.notes || null
+    });
+  }
+  btn.textContent = '✅ Lagt til!';
+  setTimeout(() => loadEvents(), 500);
+}
+
+// ══════════════════════════════════════
+// FEATURE 4: VOICE INPUT
+// ══════════════════════════════════════
+let recognition = null, isRecording = false;
+
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('mic-btn').title = 'Bruk tastaturets mikrofon (🎤) for taleinndata';
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = 'nb-NO';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onresult = (e) => {
+    let final = '', interim = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    const input = document.getElementById('question-input');
+    const existing = input.dataset.beforeVoice || '';
+    input.value = existing + (final || interim);
+  };
+
+  recognition.onstart = () => {
+    isRecording = true;
+    const btn = document.getElementById('mic-btn');
+    btn.classList.add('recording'); btn.textContent = '⏹';
+    document.getElementById('question-input').dataset.beforeVoice = document.getElementById('question-input').value;
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    const btn = document.getElementById('mic-btn');
+    btn.classList.remove('recording'); btn.textContent = '🎤';
+    delete document.getElementById('question-input').dataset.beforeVoice;
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error !== 'no-speech') console.warn('Speech error:', e.error);
+    isRecording = false;
+    const btn = document.getElementById('mic-btn');
+    btn.classList.remove('recording'); btn.textContent = '🎤';
+  };
+}
+
+function toggleVoice() {
+  if (!recognition) {
+    // Fallback: show hint about keyboard mic
+    alert('Talegjenkjenning er ikke tilgjengelig i denne nettleseren.\n\nTips: Bruk mikrofon-knappen (🎤) på tastaturet for å diktere.');
+    return;
+  }
+  if (isRecording) recognition.stop();
+  else recognition.start();
+}
+
+initVoice();
 
 // ══ Load profile photos on landing ══
 loadAllPhotos();

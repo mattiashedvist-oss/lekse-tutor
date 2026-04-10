@@ -11,6 +11,10 @@
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/icon-192.svg"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <style>
     :root {
       --mathea: #6366f1; --mathea2: #8b5cf6;
@@ -195,7 +199,15 @@
     .tutor-dot.mathea  { background: linear-gradient(135deg, var(--mathea),  var(--mathea2)); }
     .tutor-dot.silja   { background: linear-gradient(135deg, var(--silja),   var(--silja2)); }
     .tutor-dot.felicia { background: linear-gradient(135deg, var(--felicia), var(--felicia2)); }
-    .response-text { padding: 10px 16px 14px; font-size: 0.9rem; line-height: 1.75; color: #374151; white-space: pre-wrap; }
+    .response-text { padding: 10px 16px 14px; font-size: 0.9rem; line-height: 1.75; color: #374151; }
+    .response-text h1,.response-text h2,.response-text h3 { font-size: 1rem; font-weight: 700; margin: 12px 0 4px; color: #1e293b; }
+    .response-text p { margin-bottom: 8px; }
+    .response-text ul,.response-text ol { padding-left: 20px; margin-bottom: 8px; }
+    .response-text li { margin-bottom: 4px; }
+    .response-text code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+    .response-text pre { background: #f1f5f9; padding: 10px; border-radius: 8px; overflow-x: auto; margin-bottom: 8px; }
+    .response-text strong { font-weight: 700; color: #1e293b; }
+    .response-text .katex-display { overflow-x: auto; }
     .rating-row { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
     .rating-row span { font-size: 0.8rem; color: #94a3b8; }
     .rate-btn { padding: 5px 12px; border-radius: 16px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; cursor: pointer; }
@@ -621,7 +633,14 @@ async function askTutor() {
     const data = await res.json();
     const answer = data.content?.[0]?.text || '(Ingen svar)';
 
-    document.getElementById('response-text').textContent = answer;
+    const respEl = document.getElementById('response-text');
+    respEl.innerHTML = marked.parse(answer);
+    renderMathInElement(respEl, { delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false },
+      { left: '\\(', right: '\\)', display: false },
+      { left: '\\[', right: '\\]', display: true }
+    ], throwOnError: false });
     responseCard.classList.add('visible');
     document.getElementById('rate-yes').className = 'rate-btn';
     document.getElementById('rate-no').className  = 'rate-btn';

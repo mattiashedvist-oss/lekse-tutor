@@ -208,6 +208,15 @@
     .response-text pre { background: #f1f5f9; padding: 10px; border-radius: 8px; overflow-x: auto; margin-bottom: 8px; }
     .response-text strong { font-weight: 700; color: #1e293b; }
     .response-text .katex-display { overflow-x: auto; }
+
+    /* Chat thread */
+    #conversation-thread { padding: 0 12px 12px; }
+    .chat-user { background: #ede9fe; border-radius: 14px 14px 4px 14px; padding: 10px 14px; margin: 10px 0 10px 32px; font-size: 0.88rem; color: #1e293b; line-height: 1.5; }
+    .chat-tutor { background: #fff; border-radius: 14px; padding: 12px 14px; margin: 4px 0 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: flex-start; }
+    .chat-robot { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .chat-tutor .response-text { flex: 1; padding: 0; }
+    .clear-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #94a3b8; font-size: 0.85rem; cursor: pointer; display: none; }
+    .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
     .rating-row { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
     .rating-row span { font-size: 0.8rem; color: #94a3b8; }
     .rate-btn { padding: 5px 12px; border-radius: 16px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; cursor: pointer; }
@@ -376,20 +385,9 @@
       <div class="error-box" id="error-box"></div>
     </div>
 
-    <!-- Response -->
-    <div class="response-card" id="response-card">
-      <div class="response-header">
-        <div class="tutor-dot" id="tutor-dot">🤖</div>
-        <strong style="font-size:0.9rem">Tutoren svarer</strong>
-      </div>
-      <div class="response-text" id="response-text"></div>
-      <div class="rating-row">
-        <span>Nyttig?</span>
-        <button class="rate-btn" id="rate-yes" onclick="rate(true)">👍</button>
-        <button class="rate-btn" id="rate-no"  onclick="rate(false)">👎</button>
-        <span class="saved-tag" id="saved-tag" style="display:none">✅ Lagret</span>
-      </div>
-    </div>
+    <!-- Conversation thread -->
+    <div id="conversation-thread"></div>
+    <button class="clear-btn" id="clear-btn" onclick="clearConversation()">🗑️ Ny samtale</button>
 
   </div><!-- /tab-tutor -->
 
@@ -467,7 +465,7 @@ const PROMPTS = {
 };
 
 // ══ State ══
-let student = null, theme = null, selectedSubject = '', attachments = [], currentConvId = null;
+let student = null, theme = null, selectedSubject = '', attachments = [], currentConvId = null, conversationMessages = [];
 const uploadZone = document.getElementById('upload-zone');
 
 function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
@@ -509,6 +507,7 @@ function buildSubjects() {
 }
 
 function selectSubject(name, btn) {
+  if (selectedSubject && selectedSubject !== name) clearConversation();
   selectedSubject = name;
   document.querySelectorAll('.subj-btn').forEach(b => b.className = 'subj-btn');
   btn.className = `subj-btn active ${theme}`;
@@ -595,15 +594,64 @@ function toBase64(file) {
 // ══ Ask tutor ══
 const EDGE_FN = 'https://pqxcgcjdabhxebyredsz.supabase.co/functions/v1/ask-claude';
 
+function renderConversation() {
+  const thread = document.getElementById('conversation-thread');
+  thread.innerHTML = '';
+  conversationMessages.forEach((msg, idx) => {
+    if (msg.role === 'user') {
+      const textPart = msg.content.find(c => c.type === 'text');
+      const hasImage = msg.content.some(c => c.type === 'image');
+      const hasPdf   = msg.content.some(c => c.type === 'document');
+      const text = textPart?.text || '';
+      const div = document.createElement('div');
+      div.className = 'chat-user';
+      let icons = (hasImage ? '📷 ' : '') + (hasPdf ? '📄 ' : '');
+      div.textContent = icons + text;
+      thread.appendChild(div);
+    } else {
+      const text = msg.content[0]?.text || '';
+      const div = document.createElement('div');
+      div.className = 'chat-tutor';
+      const robot = document.createElement('span');
+      robot.className = 'chat-robot'; robot.textContent = '🤖';
+      const content = document.createElement('div');
+      content.className = 'response-text';
+      content.innerHTML = marked.parse(text);
+      renderMathInElement(content, { delimiters: [
+        { left:'$$', right:'$$', display:true },
+        { left:'$',  right:'$',  display:false },
+        { left:'\\(', right:'\\)', display:false },
+        { left:'\\[', right:'\\]', display:true }
+      ], throwOnError: false });
+      div.appendChild(robot); div.appendChild(content);
+      if (idx === conversationMessages.length - 1) {
+        const row = document.createElement('div'); row.className = 'rating-row';
+        row.innerHTML = `<span>Nyttig?</span><button class="rate-btn" id="rate-yes" onclick="rate(true)">👍</button><button class="rate-btn" id="rate-no" onclick="rate(false)">👎</button><span class="saved-tag" id="saved-tag" style="display:none">✅ Lagret</span>`;
+        div.appendChild(row);
+      }
+      thread.appendChild(div);
+    }
+  });
+  thread.lastElementChild?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  document.getElementById('clear-btn').style.display = conversationMessages.length ? '' : 'none';
+}
+
+function clearConversation() {
+  conversationMessages = [];
+  attachments = [];
+  renderPreviews();
+  document.getElementById('question-input').value = '';
+  document.getElementById('conversation-thread').innerHTML = '';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('clear-btn').style.display = 'none';
+  currentConvId = null;
+}
+
 async function askTutor() {
   const question = document.getElementById('question-input').value.trim();
   const btn = document.getElementById('ask-btn');
   const errBox = document.getElementById('error-box');
-  const responseCard = document.getElementById('response-card');
-
   errBox.style.display = 'none';
-  responseCard.classList.remove('visible');
-  document.getElementById('saved-tag').style.display = 'none';
   currentConvId = null;
 
   if (!attachments.length && !question) { showError('Last opp en fil eller skriv et spørsmål.'); return; }
@@ -619,6 +667,8 @@ async function askTutor() {
   });
   userContent.push({ type:'text', text: question || 'Vennligst forklar og løs oppgaven steg for steg.' });
 
+  conversationMessages.push({ role:'user', content: userContent });
+
   const model = modelForSubject(selectedSubject);
   const systemPrompt = PROMPTS[theme](selectedSubject);
 
@@ -626,35 +676,28 @@ async function askTutor() {
     const res = await fetch(EDGE_FN, {
       method: 'POST',
       headers: { 'content-type':'application/json' },
-      body: JSON.stringify({ model, max_tokens: 2048, system: systemPrompt, messages:[{ role:'user', content: userContent }] })
+      body: JSON.stringify({ model, max_tokens: 2048, system: systemPrompt, messages: conversationMessages })
     });
 
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
     const data = await res.json();
     const answer = data.content?.[0]?.text || '(Ingen svar)';
 
-    const respEl = document.getElementById('response-text');
-    respEl.innerHTML = marked.parse(answer);
-    renderMathInElement(respEl, { delimiters: [
-      { left: '$$', right: '$$', display: true },
-      { left: '$', right: '$', display: false },
-      { left: '\\(', right: '\\)', display: false },
-      { left: '\\[', right: '\\]', display: true }
-    ], throwOnError: false });
-    responseCard.classList.add('visible');
-    document.getElementById('rate-yes').className = 'rate-btn';
-    document.getElementById('rate-no').className  = 'rate-btn';
-    responseCard.scrollIntoView({ behavior:'smooth', block:'start' });
+    conversationMessages.push({ role:'assistant', content:[{ type:'text', text: answer }] });
+    renderConversation();
+
+    document.getElementById('question-input').value = '';
+    attachments = []; renderPreviews();
 
     const { data: saved, error } = await db.from('conversations').insert({
       student_name: student, subject: selectedSubject,
       user_question: question || null, tutor_response: answer
     }).select('id').single();
-    if (!error && saved) { currentConvId = saved.id; document.getElementById('saved-tag').style.display = ''; }
+    if (!error && saved) { currentConvId = saved.id; const st = document.getElementById('saved-tag'); if(st) st.style.display=''; }
 
   } catch(err) {
+    conversationMessages.pop();
     let msg = err.message || 'Ukjent feil';
-    if (msg.includes('401') || msg.toLowerCase().includes('auth')) msg = 'API-nøkkelen er ikke gyldig.';
     showError(msg);
   } finally {
     btn.disabled = false; btn.innerHTML = 'Spør tutoren! 🚀';
@@ -662,8 +705,8 @@ async function askTutor() {
 }
 
 async function rate(helpful) {
-  document.getElementById('rate-yes').className = 'rate-btn' + (helpful ? ' yes' : '');
-  document.getElementById('rate-no').className  = 'rate-btn' + (!helpful ? ' no' : '');
+  const y = document.getElementById('rate-yes'); if(y) y.className = 'rate-btn' + (helpful ? ' yes' : '');
+  const n = document.getElementById('rate-no');  if(n) n.className = 'rate-btn' + (!helpful ? ' no' : '');
   if (currentConvId) await db.from('conversations').update({ helpful }).eq('id', currentConvId);
 }
 

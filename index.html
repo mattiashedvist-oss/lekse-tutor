@@ -45,10 +45,7 @@
 
     /* ════════════════ LANDING ════════════════ */
     #landing {
-      background-color: #312e81;
-      background-image: linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #6366f1 100%);
-      background-size: 200% 200%;
-      animation: gradientShift 8s ease-in-out infinite alternate;
+      background: linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #6366f1 100%) no-repeat center/cover #1e1b4b;
       align-items: center; justify-content: center; padding: 24px;
       position: relative; overflow: hidden;
     }
@@ -234,6 +231,7 @@
     .ask-btn {
       width: 100%; padding: 14px; border: none; border-radius: 12px;
       font-size: 1rem; font-weight: 700; cursor: pointer; color: #fff;
+      background: linear-gradient(135deg, var(--student-color, #6366f1), #8b5cf6);
       transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
       box-shadow: 0 4px 14px rgba(0,0,0,0.15);
     }
@@ -288,7 +286,7 @@
     #tab-tutor.has-conversation #clear-btn { order: 2; margin: 0 12px 4px; }
     #tab-tutor.has-conversation .voice-row { margin-bottom: 4px; }
     #tab-tutor.has-conversation .voice-row textarea { min-height: 36px; padding: 8px 10px; font-size: 0.84rem; }
-    #tab-tutor.has-conversation .ask-btn { padding: 10px; font-size: 0.85rem; border-radius: 10px; }
+    #tab-tutor.has-conversation .ask-btn { padding: 10px; font-size: 0.85rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
     #tab-tutor.has-conversation .tutor-mode-row { display: none; }
 
     /* Tutor mode toggle */
@@ -453,7 +451,7 @@
 <div class="screen active" id="landing">
   <div class="landing-logo">📚</div>
   <div class="landing-title">Lekse-tutor</div>
-  <div class="landing-sub">Hvem er du i dag?</div>
+  <div class="landing-sub"></div>
   <div class="profiles">
     <div>
       <button class="profile-card mathea" onclick="enterApp('Mathea','🎓','VGS · 18 år','mathea')">

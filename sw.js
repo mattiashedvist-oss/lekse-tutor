@@ -1,4 +1,4 @@
-const CACHE = 'lekse-tutor-v11';
+const CACHE = 'lekse-tutor-v12';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', e => {
